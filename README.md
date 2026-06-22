@@ -31,9 +31,9 @@ Then open http://localhost:8000 in your browser.
 ### `POST /forecast`
 ```json
 {
-  "geography": "Rajasthan",
-  "crop": "Soybean",
-  "include_current_area": false
+  "geography": "Rajasthan",       // optional; null = all geographies
+  "crop": "Soybean",              // optional; null = all crops
+  "include_current_area": false   // true only if area is known at forecast time
 }
 ```
 
@@ -55,29 +55,31 @@ Service health check.
 
 ---
 
-## Deployment on Render
-
-1. Push this repo to GitHub
-2. Create a new **Web Service** on [render.com](https://render.com)
-3. Connect your GitHub repo — `render.yaml` handles build & start commands automatically
-4. Mount a **Render Disk** at `/data` and upload `crop_panel_data-1.csv` there
-
----
-
 ## Model Design Notes
 
 | Design Choice | Rationale |
 |---|---|
 | Lagged features only | Avoids leakage from contemporaneous production/area |
-| Pooled model (all series) | More training data than per-series models |
+| Pooled model (all series) | More training data than per-series models; generalises better |
 | Rolling-origin split | Preserves time order; no future data in training |
 | Random Forest | Handles nonlinear trends, robust to small sample sizes |
 | One-hot encoding | Allows geography & crop effects without separate models |
 
 ---
 
+## Deployment on Render
+
+1. Push this repo to GitHub
+2. Create a new **Web Service** on [render.com](https://render.com)
+3. Connect your GitHub repo
+4. Render auto-detects `render.yaml` — build & start commands are pre-configured
+5. Add the CSV data file at `data/crop_panel_data-1.csv` (or use a Render disk)
+
+---
+
 ## Limitations
 
 - Dataset has only 3 geographies × 6 crops — pooled model has ~380 training rows
-- No weather, soil, irrigation, or price features
+- No weather, soil, irrigation, or price features; model captures time & lag patterns only
 - MAPE ~16–17% is reasonable for agricultural data without climate covariates
+- Adding external covariates (rainfall, temperature, fertilizer use) would significantly improve accuracy
